@@ -1,5 +1,6 @@
 .vscode
 .ipynb_checkpoints
+.DS_Store
 datasets/*
 myenv
 training/model.pth
