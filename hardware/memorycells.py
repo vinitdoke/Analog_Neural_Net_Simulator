@@ -27,11 +27,11 @@ class Cell_1T1R(SubCircuit):
 
 
 class Cell_1T1F(SubCircuit):
-    
-        __nodes__ = ("source", "out", "gate")
-    
-        def __init__(self, name, r1):  
-            pass
+
+    __nodes__ = ("source", "out", "gate")
+
+    def __init__(self, name, r1):
+        pass
 
 
 if __name__ == "__main__":

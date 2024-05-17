@@ -1,1 +1,2 @@
 from hardware.crossbars import SimpleCrossbar
+from interface.IOTransfer import weights_to_differential_conductance
