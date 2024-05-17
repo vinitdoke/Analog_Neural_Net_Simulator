@@ -36,8 +36,6 @@ class PseudoHardwareNN(NN):
             x = x.flatten()
             x = self.hardware_multiplier(x, weights.T).matmul()
 
-        # convert back to torch tensor
-        # x = torch.tensor(x).to(device=layer.weight.device)
         x = (
             torch.tensor(x)
             .reshape(-1, layer.weight.shape[0])

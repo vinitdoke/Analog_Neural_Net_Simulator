@@ -26,6 +26,14 @@ class Cell_1T1R(SubCircuit):
         self.R(1, "drain", "out", r1)  # resistor
 
 
+class Cell_1T1F(SubCircuit):
+    
+        __nodes__ = ("source", "out", "gate")
+    
+        def __init__(self, name, r1):  
+            pass
+
+
 if __name__ == "__main__":
 
     circuit = Circuit("One Transistor One Resistor")

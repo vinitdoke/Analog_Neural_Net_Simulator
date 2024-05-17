@@ -10,11 +10,12 @@ logger = Logging.setup_logging()
 
 class SimpleCrossbar:
 
-    def __init__(self, input_voltage_vector, weight_matrix):
+    def __init__(self, input_voltage_vector, weight_matrix, verbose=False):
 
         # assert dimensions : 1 for input vector, 2 for weight matrix
         assert len(input_voltage_vector.shape) == 1
         assert len(weight_matrix.shape) == 2
+        self.verbose = verbose
 
         self.in_dim = len(input_voltage_vector)
         self.out_dim = len(weight_matrix[0])
@@ -23,7 +24,7 @@ class SimpleCrossbar:
         self.input_voltage_vector = input_voltage_vector
 
         self.crossbar = self.create_crossbar()
-        # print(self.crossbar)
+        
 
     def create_crossbar(self) -> Circuit:
 
@@ -45,6 +46,9 @@ class SimpleCrossbar:
         # connect all OUTs to the gnd
         for j in range(self.out_dim):
             self.crossbar.R(f"{j}", f"out_{j}", self.crossbar.gnd, 0)
+        
+        if self.verbose:
+            print(self.crossbar)
 
         return self.crossbar
 
@@ -52,6 +56,9 @@ class SimpleCrossbar:
 
         simulator = self.crossbar.simulator(temperature=25, nominal_temperature=25)
         simulator.save_currents = True
+
+        if self.verbose:
+            print(simulator)
 
         analysis = simulator.operating_point()
 
@@ -95,7 +102,7 @@ def test_matrix():
 
 if __name__ == "__main__":
 
-    in_dim = 784
+    in_dim = 10
     out_dim = 16
     weight_matrix = np.random.rand(in_dim, out_dim)  # positive weights from 0 to 1
     input_voltage_vector = np.random.randn(in_dim)  # random input voltages
@@ -106,7 +113,7 @@ if __name__ == "__main__":
     true_output = np.dot(weight_matrix.T, input_voltage_vector)
 
     # crossbar product
-    computed_output = SimpleCrossbar(input_voltage_vector, weight_matrix).matmul()
+    computed_output = SimpleCrossbar(input_voltage_vector, weight_matrix, verbose=True).matmul()
 
     print(f"True output: {true_output}")
     print(f"Computed output: {computed_output}")
