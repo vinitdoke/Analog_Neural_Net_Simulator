@@ -13,12 +13,14 @@ def quantize(x, delta, clip_range=None):
     return bins[np.digitize(np.clip(x, *clip_range), bins) - 1]
 
 
-def weights_to_differential_conductance(weight_matrix):
+def weights_to_differential_resistance(weight_matrix):
 
     """
     This function takes in a weight matrix (m,n) and returns a differential conductance matrix(m,n,2)
     """
 
+    m, n = weight_matrix.shape
+    conductance_matrix = np.zeros((m, n, 2))
     
 
 
@@ -36,7 +38,7 @@ if __name__ == "__main__":
 
     np.random.seed(0)
 
-    clip_range = [-0.5, 1]
+    clip_range = [-1, 1]
     quadrature_delta = 0.1
 
     weights = np.random.randn(1000)

@@ -13,6 +13,16 @@ libraries_path = find_libraries()
 spice_library = SpiceLibrary(libraries_path)
 
 
+class Cell_Resistor(SubCircuit):
+
+    __nodes__ = ("1", "2")
+
+    def __init__(self, name, r1):
+
+        super().__init__(name, *self.__nodes__)
+        self.R(1, "1", "2", r1)
+
+
 class Cell_1T1R(SubCircuit):
 
     __nodes__ = ("source", "out", "gate")
@@ -27,6 +37,8 @@ class Cell_1T1R(SubCircuit):
 
 
 class Cell_1T1F(SubCircuit):
+
+    # TODO: Behavioral model of an FeFET/ Current Stochastic Device
 
     __nodes__ = ("source", "out", "gate")
 

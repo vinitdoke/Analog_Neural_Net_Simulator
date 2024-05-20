@@ -18,19 +18,36 @@ class PseudoHardwareNN(NN):
         input_quantization=(False, 0.1),
         weight_quantization=(False, 0.05, [-1, 1]),
         output_quantization=(False, 0.1),
+        weight_variance=None,
+        inline_resistances=(False, (0,0)),
         verbose=False,
     ):
         super(PseudoHardwareNN, self).__init__()
         self.printed = False
         self.hardware_multiplier = hardware_multiplier
 
+
+        ## NON-IDEALITIES
+
+        # quantization
         self.input_quantization = input_quantization
         self.weight_quantization = weight_quantization
         self.output_quantization = output_quantization
 
+
+        # weight variance
+        self.weight_variance = weight_variance
+
+        # in-line resistances
+        self.inline_resistances = inline_resistances
+
+
+
+
     def hardware_propagate(self, layer, x):
         """
         Propagate input through hardware multiplier.
+        #TODO : no need to perform quantisation steps for every call
         """
 
         weights = layer.weight.cpu().numpy()
@@ -48,16 +65,24 @@ class PseudoHardwareNN(NN):
             # flatten input
             x = x.flatten()
 
-            ## QUANTIZATION
+            # quantize input and weights
             if self.input_quantization[0]:
                 x = quantize(x, self.input_quantization[1])
             if self.weight_quantization[0]:
                 weights = quantize(
                     weights, self.weight_quantization[1], self.weight_quantization[2]
                 )
+            
+            # add weight variance
+            if self.weight_variance is not None:
+                weights += np.random.normal(0, self.weight_variance, weights.shape)
 
             # hardware multiplication
-            x = self.hardware_multiplier(x, weights.T).matmul()
+
+            if self.inline_resistances[0]:
+                x = self.hardware_multiplier(x, weights.T, inline_resistances = self.inline_resistances[1]).matmul()
+            else:
+                x = self.hardware_multiplier(x, weights.T).matmul()
 
             # quantize output
             if self.output_quantization[0]:
