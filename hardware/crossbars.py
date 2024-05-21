@@ -30,8 +30,8 @@ class Crossbar:
         # dimensions
         self.in_dim = weight_matrix.shape[0]
         self.out_dim = weight_matrix.shape[1]
-        self.verbose = verbose
 
+        self.verbose = verbose
         self.weight_matrix = weight_matrix
 
         # pyspice circuit object

@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# TODO see numba optimization
+
 
 def quantize(x, delta, clip_range=None):
     """
@@ -47,28 +49,28 @@ if __name__ == "__main__":
 
     ## check quantize
 
-    # clip_range = [-1, 1]
-    # quadrature_delta = 0.1
+    clip_range = [-1, 1]
+    quadrature_delta = 0.1
 
-    # weights = np.random.randn(1000)
-    # quantized = quantize(weights, quadrature_delta, clip_range)
+    weights = np.random.randn(1000)
+    quantized = quantize(weights, quadrature_delta, clip_range)
 
-    # quant_unique, quant_counts = np.unique(quantized, return_counts=True)
+    quant_unique, quant_counts = np.unique(quantized, return_counts=True)
 
-    # print(quant_unique)
-    # print(quant_counts)
+    print(quant_unique)
+    print(quant_counts)
 
-    # plt.stem(quant_unique, quant_counts, label="quantized", markerfmt="ro")
-    # plt.hist(weights, label="Weight Dist", alpha=0.5)
+    plt.stem(quant_unique, quant_counts, label="quantized", markerfmt="ro")
+    plt.hist(weights, label="Weight Dist", alpha=0.5)
 
-    # plt.title(f"Quadrature Delta: {quadrature_delta} Clip Range: {clip_range}")
-    # plt.legend()
-    # plt.show()
+    plt.title(f"Quadrature Delta: {quadrature_delta} Clip Range: {clip_range}")
+    plt.legend()
+    plt.show()
 
     # check weights_to_differential_conductance
 
-    weights = np.random.randn(3, 3)
-    conductance_matrix = weights_to_differential_conductance(weights)
+    # weights = np.random.randn(3, 3)
+    # conductance_matrix = weights_to_differential_conductance(weights)
 
-    print(weights)
-    print(conductance_matrix)
+    # print(weights)
+    # print(conductance_matrix)

@@ -99,7 +99,7 @@ class PseudoHardwareNN(NN):
 
         return x
 
-    def hardware_propagate(self, layer, x):
+    # def hardware_propagate(self, layer, x):
         """
         Propagate input through hardware multiplier.
         #TODO : no need to perform quantisation steps for every call
@@ -165,7 +165,6 @@ class PseudoHardwareNN(NN):
         for i, layer in enumerate(self.children()):
 
             x = self.fast_hw_propagate(i, x)
-            # x = self.hardware_propagate(layer, x)
 
             # convert back to tensor
             x = (
