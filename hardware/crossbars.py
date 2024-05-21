@@ -7,42 +7,116 @@ import PySpice.Logging.Logging as Logging
 
 # from hardware.memorycells import *
 
-# from hardware.memorycells import Cell_Resistor, Cell_1T1R, Cell_1T1F
-from memorycells import Cell_Resistor
+from hardware.memorycells import Cell_Resistor, Cell_1T1R, Cell_1T1F
 
-# from interface.IOTransfer import weights_to_differential_resistance
+# from memorycells import Cell_Resistor
 
 logger = Logging.setup_logging()
 
 
-class SimpleCrossbar:
+class Crossbar:
+    """
+    Skeleton class for a crossbar
+    """
+
+    def __init__(
+        self,
+        weight_matrix: np.ndarray,
+        input_voltage_vector: np.ndarray = None,
+        name: str = "Crossbar",
+        verbose: bool = False,
+    ):
+
+        # dimensions
+        self.in_dim = weight_matrix.shape[0]
+        self.out_dim = weight_matrix.shape[1]
+        self.verbose = verbose
+
+        self.weight_matrix = weight_matrix
+
+        # pyspice circuit object
+        self.crossbar = Circuit(name)
+
+        # set input voltages if given
+        self.input_set = False
+        if input_voltage_vector is not None:
+            self.alter_input_voltage(input_voltage_vector)
+            self.input_set = True
+
+    def create_crossbar(self):
+        raise NotImplementedError
+
+    def alter_input_voltage(self, input_voltage_vector):
+
+        # print(input_voltage_vector.shape, self.in_dim, self.out_dim)
+        assert len(input_voltage_vector) == self.in_dim
+
+        if self.input_set:
+            # alter pre-existing voltage sources
+            for i in range(self.in_dim):
+                self.crossbar[f"V{i}"].dc_value = input_voltage_vector[i]
+
+        else:
+            # create new voltage sources
+            for i in range(self.in_dim):
+                self.crossbar.V(
+                    f"{i}", f"in_{i}", self.crossbar.gnd, input_voltage_vector[i]
+                )
+            self.input_set = True
+
+    def simulate(
+        self, temperature=25, nominal_temperature=25
+    ):  # TODO Expose SPICE Sim options
+        simulator = self.crossbar.simulator(
+            temperature=temperature, nominal_temperature=nominal_temperature
+        )
+        simulator.save_currents = True
+
+        if self.verbose:
+            print(simulator)
+
+        analysis = simulator.operating_point()
+
+        return analysis
+
+    def matmul(self, input_voltage_vector=None):
+        """
+        Default matmul
+        """
+        if input_voltage_vector is not None:
+            self.alter_input_voltage(input_voltage_vector)
+
+        if not self.input_set:
+            raise ValueError("Input voltage not set")
+
+        self.analysis = self.simulate()
+        products = []
+        for i in range(self.out_dim):
+            products.append(float(self.analysis.nodes[f"out_{i}"][0]) * 1000)
+
+        return np.array(products)
+
+
+class SimpleCrossbar(Crossbar):
     """
     Simple crossbar with no circuital non-idealities
     """
 
-    def __init__(self, input_voltage_vector, weight_matrix, verbose=False):
+    def __init__(
+        self,
+        weight_matrix: np.ndarray,
+        input_voltage_vector: np.ndarray = None,
+        verbose: bool = False,
+    ):
 
-        assert len(input_voltage_vector.shape) == 1
-        assert len(weight_matrix.shape) == 2
-        self.verbose = verbose
+        super().__init__(
+            weight_matrix, input_voltage_vector, verbose=verbose, name="SimpleCrossbar"
+        )
 
-        self.in_dim = len(input_voltage_vector)
-        self.out_dim = len(weight_matrix[0])
-
-        self.weight_matrix = weight_matrix
-        self.input_voltage_vector = input_voltage_vector
-
+        # build the resistive network
         self.create_crossbar()
 
-    def create_crossbar(self) -> Circuit:
-
-        self.crossbar = Circuit("Crossbar")
-
-        # add voltage sources
-        for i in range(self.in_dim):
-            self.crossbar.V(
-                f"{i}", f"in_{i}", self.crossbar.gnd, self.input_voltage_vector[i]
-            )
+    def create_crossbar(self):
 
         # add resistors
         for j in range(self.out_dim):
@@ -58,74 +132,31 @@ class SimpleCrossbar:
         if self.verbose:
             print(self.crossbar)
 
-    def simulate(self):
 
-        simulator = self.crossbar.simulator(temperature=25, nominal_temperature=25)
-        simulator.save_currents = True
-
-        if self.verbose:
-            print(simulator)
-
-        analysis = simulator.operating_point()
-
-        return analysis
-
-    def matmul(self):
-
-        self.analysis = self.simulate()
-
-        # for node in self.analysis.nodes.values():
-        #     print(f"{str(node)}: {np.array(node)[0]}V")
-
-        # for param in self.analysis.internal_parameters.values():
-        #     print(f"{str(param)}: {np.array(param)[0]}A")
-
-        products = []
-        for i in range(self.out_dim):
-            products.append(float(self.analysis.nodes[f"out_{i}"][0]) * 1000)
-
-        return np.array(products)
-
-    def visualize(self):
-        pass
-
-
-class SimpleCrossbar2:
+class SimpleCrossbar2(Crossbar):
     """
     Simple crossbar with inline resistances, asbtracted memory cells, grid-based crossbar creation
     """
 
     def __init__(
         self,
-        input_voltage_vector: np.ndarray,
         weight_matrix: np.ndarray,
+        input_voltage_vector: np.ndarray = None,
         memory_cell: SubCircuit = Cell_Resistor,
         inline_resistances: tuple = (0, 0),
         verbose: bool = False,
     ):
-
-        self.verbose = verbose
-        self.weight_matrix = weight_matrix
-        self.input_voltage_vector = input_voltage_vector
-        self.inline_resistances = inline_resistances  # (R_vertical, R_horizontal)
-
-        self.in_dim = len(input_voltage_vector)
-        self.out_dim = len(weight_matrix[0])
+        super().__init__(
+            weight_matrix, input_voltage_vector, verbose=verbose, name="SimpleCrossbar2"
+        )
 
         self.memory_cell = memory_cell
+        self.inline_resistances = inline_resistances
 
-        self.crossbar = self.create_crossbar()
+        # build the resistive network
+        self.create_crossbar()
 
     def create_crossbar(self):
-
-        # create circuit
-        self.crossbar = Circuit("Crossbar")
-
-        # add voltage sources
-        for i in range(self.in_dim):
-            self.crossbar.V(
-                f"{i}", f"in_{i}", self.crossbar.gnd, self.input_voltage_vector[i]
-            )
 
         # add horizontal in_line resistor series on each voltage input line
         for i in range(self.in_dim):
@@ -175,6 +206,8 @@ class SimpleCrossbar2:
                             f"out_{j}",
                             self.inline_resistances[0],
                         )
+        else:
+            raise NotImplementedError("3 terminal not implemented yet")
 
         # connect all OUTs to the gnd
         for j in range(self.out_dim):
@@ -183,66 +216,31 @@ class SimpleCrossbar2:
         if self.verbose:
             print(self.crossbar)
 
-        return self.crossbar
 
-    def simulate(self):
-
-        simulator = self.crossbar.simulator(temperature=25, nominal_temperature=25)
-        simulator.save_currents = True
-
-        if self.verbose:
-            print(simulator)
-
-        analysis = simulator.operating_point()
-
-        return analysis
-
-    def matmul(self):
-        self.analysis = self.simulate()
-
-        products = []
-        for i in range(self.out_dim):
-            products.append(float(self.analysis.nodes[f"out_{i}"][0]) * 1000)
-
-        return np.array(products)
-
-
-class DifferentialCrossbar:
+class DifferentialCrossbar(Crossbar):
 
     def __init__(
         self,
-        input_voltage_vector: np.ndarray,
         weight_matrix: np.ndarray,
+        input_voltage_vector: np.ndarray = None,
         memory_cell: SubCircuit = Cell_Resistor,
         inline_resistances: tuple = (0, 0),
         verbose: bool = False,
     ):
+        super().__init__(
+            weight_matrix,
+            input_voltage_vector,
+            verbose=verbose,
+            name="DifferentialCrossbar",
+        )
 
-        self.verbose = verbose
-        self.weight_matrix = weight_matrix
-        self.input_voltage_vector = input_voltage_vector
+        # assert weight_matrix.shape[2] == 2
         self.inline_resistances = inline_resistances
-
-        assert len(input_voltage_vector) == len(weight_matrix)
-        assert len(weight_matrix.shape) == 3
-
-        self.in_dim = len(input_voltage_vector)
-        self.out_dim = len(weight_matrix[0])
-
         self.memory_cell = memory_cell
 
-        self.crossbar = self.create_crossbar()
+        self.create_crossbar()
 
     def create_crossbar(self):
-
-        # create circuit
-        self.crossbar = Circuit("Crossbar")
-
-        # add voltage sources
-        for i in range(self.in_dim):
-            self.crossbar.V(
-                f"{i}", f"in_{i}", self.crossbar.gnd, self.input_voltage_vector[i]
-            )
 
         # add horizontal in_line resistor series (2 times the normal) on each voltage input line
         for i in range(self.in_dim):
@@ -330,6 +328,9 @@ class DifferentialCrossbar:
                             self.inline_resistances[0],
                         )
 
+        else:
+            raise NotImplementedError("3 terminal not implemented yet")
+
         # connect all OUTs to the gnd
         for j in range(self.out_dim):
             self.crossbar.R(f"{j}_p", f"out_{j}_p", self.crossbar.gnd, 0)
@@ -338,21 +339,14 @@ class DifferentialCrossbar:
         if self.verbose:
             print(self.crossbar)
 
-        return self.crossbar
+    def matmul(self, input_voltage_vector=None):
 
-    def simulate(self):
+        if input_voltage_vector is not None:
+            self.alter_input_voltage(input_voltage_vector)
 
-        simulator = self.crossbar.simulator(temperature=25, nominal_temperature=25)
-        simulator.save_currents = True
+        if not self.input_set:
+            raise ValueError("Input voltage not set")
 
-        if self.verbose:
-            print(simulator)
-
-        analysis = simulator.operating_point()
-
-        return analysis
-
-    def matmul(self):
         self.analysis = self.simulate()
 
         products = []
@@ -366,13 +360,6 @@ class DifferentialCrossbar:
             )
 
         return np.array(products)
-
-    def visualize(self):
-        pass
-
-
-class MultiBitCrossbar:
-    pass
 
 
 def test_matrix(multiplier=SimpleCrossbar):
@@ -532,26 +519,42 @@ if __name__ == "__main__":
 
     ### Differential Crossbar test
 
-    in_dim = 3
-    out_dim = 3
-    weight_matrix = np.random.randn(in_dim, out_dim, 2)  # positive weights from 0 to 1
-    input_voltage_vector = np.random.randn(in_dim)  # random input voltages
+    # in_dim = 3
+    # out_dim = 3
+    # weight_matrix = np.random.randn(in_dim, out_dim, 2)  # positive weights from 0 to 1
+    # input_voltage_vector = np.random.randn(in_dim)  # random input voltages
 
-    true_output = np.dot(weight_matrix.T, input_voltage_vector)[0] - np.dot(weight_matrix.T, input_voltage_vector)[1]
+    # true_output = (
+    #     np.dot(weight_matrix.T, input_voltage_vector)[0]
+    #     - np.dot(weight_matrix.T, input_voltage_vector)[1]
+    # )
 
+    # crossbar = DifferentialCrossbar(
+    #     input_voltage_vector,
+    #     weight_matrix,
+    #     Cell_Resistor,
+    #     inline_resistances=(1e-3, 1e-3),
+    #     verbose=True,
+    # )
 
-    crossbar = DifferentialCrossbar(
-        input_voltage_vector,
-        weight_matrix,
-        Cell_Resistor,
-        inline_resistances=(1e-3, 1e-3),
-        verbose=True,
-    )
+    # products = crossbar.matmul()
 
-    products = crossbar.matmul()
+    # print(f"{products}")
+    # print(f"{true_output}")
 
-    print(f"{products}")
-    print(f"{true_output}")
+    # error = np.linalg.norm(products - true_output, ord=2) / np.linalg.norm(
+    #     true_output, ord=2
+    # )
+    # print(f"Error: {error}")
 
-    error = np.linalg.norm(products - true_output, ord=2)/np.linalg.norm(true_output, ord=2)
-    print(f"Error: {error}")
+    ### REFACTORED
+    v1_set = np.random.randn(3)
+    v2_set = np.random.randn(3)
+    matrix = np.random.randn(3, 3, 2)
+
+    trail = DifferentialCrossbar(matrix, v1_set)
+    print(trail.matmul())
+    print(np.matmul(matrix[:, :, 0].T - matrix[:, :, 1].T, v1_set))
+
+    print(trail.matmul(v2_set))
+    print(np.matmul(matrix[:, :, 0].T - matrix[:, :, 1].T, v2_set))

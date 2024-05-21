@@ -53,6 +53,12 @@ def train_loop(
         # Compute prediction error
         pred = model(X)
         loss = loss_fn(pred, y)
+
+        # add l1 regularization
+        l1_lambda = 0.001
+        l1_norm = sum(p.abs().sum() for p in model.parameters())
+        loss = loss + l1_lambda * l1_norm
+
         training_epochLoss.append(loss.item())
 
         # Backpropagation
@@ -121,7 +127,7 @@ def train(device="cpu"):
 
 
 def save_model(model):
-    torch.save(model.state_dict(), "model.pth")
+    torch.save(model.state_dict(), "model_l1reg.pth")
     print("Model saved")
 
 
