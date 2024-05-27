@@ -218,6 +218,11 @@ class SimpleCrossbar2(Crossbar):
 
 
 class DifferentialCrossbar(Crossbar):
+    """
+    Differential Crossbar with inline resistances, asbtracted memory cells, grid-based crossbar creation
+    Requires diffential weight matrix (m, n, 2)
+    """
+
 
     def __init__(
         self,
@@ -548,13 +553,28 @@ if __name__ == "__main__":
     # print(f"Error: {error}")
 
     ### REFACTORED
+    # v1_set = np.random.randn(3)
+    # v2_set = np.random.randn(3)
+    # matrix = np.random.randn(3, 3, 2)
+
+    # trial = DifferentialCrossbar(matrix, v1_set, verbose=True)
+    # print(trial.matmul())
+    # print(np.matmul(matrix[:, :, 0].T - matrix[:, :, 1].T, v1_set))
+
+    # print(trial.matmul(v2_set))
+    # print(np.matmul(matrix[:, :, 0].T - matrix[:, :, 1].T, v2_set))
+
+    ### REFACTORED CROSSBAR2
     v1_set = np.random.randn(3)
     v2_set = np.random.randn(3)
-    matrix = np.random.randn(3, 3, 2)
+    matrix = np.random.randn(3, 3)
 
-    trail = DifferentialCrossbar(matrix, v1_set)
-    print(trail.matmul())
-    print(np.matmul(matrix[:, :, 0].T - matrix[:, :, 1].T, v1_set))
-
-    print(trail.matmul(v2_set))
-    print(np.matmul(matrix[:, :, 0].T - matrix[:, :, 1].T, v2_set))
+    trial = SimpleCrossbar2(
+        weight_matrix=matrix,
+        input_voltage_vector=v1_set,
+        memory_cell=Cell_Resistor,
+        inline_resistances=(1e-3, 1e-3),
+        verbose=True,
+    )
+    print(trial.matmul())
+    print(np.matmul(matrix.T, v1_set))
