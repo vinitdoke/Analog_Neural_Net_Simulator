@@ -16,12 +16,16 @@ import torch
 from training.model_training import NN, get_loaders
 
 
-def compare_models(models=[], names=None, max_samples=10):
+def compare_models(models=[], names=None, max_samples=10, dataset=None):
 
     if names is None:
         names = [f"Model {i}" for i in range(len(models))]
 
-    test_data = get_loaders(batch_size=1, train=False, dataset_path="datasets/")
+    if dataset is None:
+        test_data = get_loaders(batch_size=1, train=False, dataset_path="datasets/")
+    else:
+        test_data = dataset
+
     confusion_matrices = [np.zeros((10, 10)) for _ in models]
     total_samples = 0
     models_corrects = [0 for _ in models]
