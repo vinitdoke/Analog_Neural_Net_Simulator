@@ -15,7 +15,6 @@ def quantize(x, delta, clip_range=None):
     if clip_range[0] == clip_range[1]:
         return x
 
-
     bins = np.arange(clip_range[0], clip_range[1], delta)
     return bins[np.digitize(np.clip(x, *clip_range), bins) - 1]
 
@@ -46,12 +45,11 @@ def weights_to_differential_conductance(weight_matrix, G_OFF=1e-9):
 
 def serial_conv2D_to_VMM(fmap, kernels, stride=1, padding=0):
     pass
-    
+
 
 if __name__ == "__main__":
-    pass
 
-    # np.random.seed(0)
+    np.random.seed(0)
 
     # ## check quantize
 
@@ -82,16 +80,14 @@ if __name__ == "__main__":
 
     # plt.show()
 
-
     # check weights_to_differential_conductance
 
-    # weights = np.random.randn(3, 3)
-    # conductance_matrix = weights_to_differential_conductance(weights)
+    weights = np.random.randn(3, 3)
+    conductance_matrix = weights_to_differential_conductance(weights)
 
-    # print(weights)
-    # print(conductance_matrix)
-
-
+    print(weights)
+    print(conductance_matrix[:,:,0])
+    print(conductance_matrix[:,:,1])
 
     ## check conv2D_to_MM
 
@@ -109,7 +105,7 @@ if __name__ == "__main__":
     # print(input_tensor)
     # print(toeplitz_matrix)
     # print(output_shape)
-    
+
     # # print(my_convolve2d(fmap, kernel))
 
     # print(np.matmul(toeplitz_matrix, input_tensor).reshape(output_shape))

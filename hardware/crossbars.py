@@ -223,7 +223,6 @@ class DifferentialCrossbar(Crossbar):
     Requires diffential weight matrix (m, n, 2)
     """
 
-
     def __init__(
         self,
         weight_matrix: np.ndarray,
@@ -370,10 +369,10 @@ class DifferentialCrossbar(Crossbar):
 def test_matrix(multiplier=SimpleCrossbar):
 
     in_dim_min = 10
-    in_dim_max = 100
+    in_dim_max = 50
     out_dim_min = 10
-    out_dim_max = 100
-    step_size = 10
+    out_dim_max = 50
+    step_size = 5
 
     inputs = np.arange(in_dim_min, in_dim_max, step_size)
     outputs = np.arange(out_dim_min, out_dim_max, step_size)
@@ -383,12 +382,19 @@ def test_matrix(multiplier=SimpleCrossbar):
     for i, in_dim in enumerate(inputs):
         for j, out_dim in enumerate(outputs):
 
+            print(f"Input Dimension: {in_dim}, Output Dimension: {out_dim}", end="\r")
+
             weight_matrix = np.random.rand(in_dim, out_dim)
             input_voltage_vector = np.random.randn(in_dim)
+        
             true_output = np.dot(weight_matrix.T, input_voltage_vector)
-            computed_output = SimpleCrossbar(
-                input_voltage_vector, weight_matrix
+            computed_output = SimpleCrossbar2(
+                weight_matrix=weight_matrix,
+                input_voltage_vector=input_voltage_vector,
+                memory_cell=Cell_Resistor,
+                inline_resistances=(0, 1e-4),
             ).matmul()
+
             errors[i, j] = np.linalg.norm(
                 true_output - computed_output, ord=2
             ) / np.linalg.norm(true_output, ord=2)
@@ -396,14 +402,20 @@ def test_matrix(multiplier=SimpleCrossbar):
 
     plt.imshow(errors, cmap="hot", interpolation="nearest")
     plt.colorbar()
-    plt.xlabel("Output Dimension")
-    plt.ylabel("Input Dimension")
-    plt.xticks(np.arange(len(outputs)), outputs)
-    plt.yticks(np.arange(len(inputs)), inputs)
+
+    plt.title("Error Heatmap", fontsize=25)
+    plt.xlabel("Output Dimension", fontsize=20)
+    plt.ylabel("Input Dimension", fontsize=20)
+
+    plt.xticks(np.arange(len(outputs)), outputs, fontsize=15)
+    plt.yticks(np.arange(len(inputs)), inputs, fontsize=15)
+
+    plt.savefig("errorscaling3.eps", dpi = 600, bbox_inches='tight')
+
     plt.show()
 
 
-def test_matrix2(in_line_resistances=(0, 0)):
+def test_matrix2(in_line_resistances=(1e-4, 1e-4)):
 
     in_dim_min = 10
     in_dim_max = 50
@@ -439,10 +451,16 @@ def test_matrix2(in_line_resistances=(0, 0)):
 
     plt.imshow(errors, cmap="hot", interpolation="nearest")
     plt.colorbar()
-    # plt.xlabel("Output Dimension")
-    # plt.ylabel("Input Dimension")
-    # plt.xticks(np.arange(len(outputs)), outputs)
-    # plt.yticks(np.arange(len(inputs)), inputs)
+
+    plt.title("Error Heatmap", fontsize=25)
+    plt.xlabel("Output Dimension", fontsize=20)
+    plt.ylabel("Input Dimension", fontsize=20)
+
+    plt.xticks(np.arange(len(outputs)), outputs, fontsize=20)
+    plt.yticks(np.arange(len(inputs)), inputs, fontsize=20)
+
+    plt.savefig("errorscaling.eps", dpi = 600, bbox_inches='tight')
+
     plt.show()
 
 
@@ -480,7 +498,7 @@ def error_growth_over_input_dim():
 
 if __name__ == "__main__":
 
-    # # test_matrix()
+    test_matrix()
     # # error_growth_over_input_dim()
 
     # in_dim = 10
@@ -565,16 +583,16 @@ if __name__ == "__main__":
     # print(np.matmul(matrix[:, :, 0].T - matrix[:, :, 1].T, v2_set))
 
     ### REFACTORED CROSSBAR2
-    v1_set = np.random.randn(3)
-    v2_set = np.random.randn(3)
-    matrix = np.random.randn(3, 3)
+    # v1_set = np.random.randn(3)
+    # v2_set = np.random.randn(3)
+    # matrix = np.random.randn(3, 3)
 
-    trial = SimpleCrossbar2(
-        weight_matrix=matrix,
-        input_voltage_vector=v1_set,
-        memory_cell=Cell_Resistor,
-        inline_resistances=(1e-3, 1e-3),
-        verbose=True,
-    )
-    print(trial.matmul())
-    print(np.matmul(matrix.T, v1_set))
+    # trial = SimpleCrossbar2(
+    #     weight_matrix=matrix,
+    #     input_voltage_vector=v1_set,
+    #     memory_cell=Cell_Resistor,
+    #     inline_resistances=(1e-3, 1e-3),
+    #     verbose=True,
+    # )
+    # print(trial.matmul())
+    # print(np.matmul(matrix.T, v1_set))

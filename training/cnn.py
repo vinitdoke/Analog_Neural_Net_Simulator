@@ -72,7 +72,7 @@ def train_loop(
 
         print(f"Epoch {epoch+1}: Avg. Loss: {np.mean(training_epochLoss):.4f}")
         epochWiseLoss.append(np.mean(training_epochLoss))
-        
+
     return model, epochWiseLoss
 
 
@@ -188,4 +188,3 @@ if __name__ == "__main__":
 
     # save model
     torch.save(model.state_dict(), f"cnn_weights.pth")
-

@@ -16,7 +16,7 @@ import torch
 from training.model_training import NN, get_loaders
 
 
-def compare_models(models=[], names=None, max_samples=10, dataset=None):
+def compare_models(models=[], names=None, max_samples=10, dataset=None, get_accuracy = False, verbose=False):
 
     if names is None:
         names = [f"Model {i}" for i in range(len(models))]
@@ -32,7 +32,7 @@ def compare_models(models=[], names=None, max_samples=10, dataset=None):
     device = "cpu"
 
     with torch.no_grad():
-        
+
         for data in test_data:
 
             if max_samples is not None and total_samples >= max_samples:
@@ -43,7 +43,11 @@ def compare_models(models=[], names=None, max_samples=10, dataset=None):
             total_samples += labels.size(0)
 
             for i, model in enumerate(models):
-                print(f"Testing {names[i]}, {total_samples}/{max_samples} Tested", end="\r")
+                if verbose:
+                    print(
+                        f"Testing {names[i]}, {total_samples}/{max_samples} Tested",
+                        end="\r",
+                    )
 
                 outputs = model(images)
                 _, predicted = torch.max(outputs, 1)
@@ -51,6 +55,12 @@ def compare_models(models=[], names=None, max_samples=10, dataset=None):
                 models_corrects[i] += (predicted == labels).sum().item()
 
                 confusion_matrices[i][labels, predicted] += 1
+
+    if get_accuracy:
+        return [models_corrects[i] / total_samples for i in range(len(models))]
+
+
+
 
 
 
@@ -60,7 +70,7 @@ def compare_models(models=[], names=None, max_samples=10, dataset=None):
         print(f"{names[i]}: {models_corrects[i] / total_samples}")
 
     # Plot confusion matrices for each model
-    fig, axs = plt.subplots(1, len(models), figsize=(6*len(models), 5))
+    fig, axs = plt.subplots(1, len(models), figsize=(6 * len(models), 5))
 
     # print(len(axs))
     for i, model in enumerate(models):
@@ -69,17 +79,19 @@ def compare_models(models=[], names=None, max_samples=10, dataset=None):
             ax = axs
         else:
             ax = axs[i]
-        
-        sns.heatmap(confusion_matrices[i], annot=True, fmt='g', ax=ax, cmap="Blues")
-        ax.set_title(f"{names[i]}; Accuracy: {models_corrects[i] / total_samples}")
-        ax.set_xlabel("Predicted")
-        ax.set_ylabel("True")
+
+        sns.heatmap(confusion_matrices[i], annot=True, fmt="g", ax=ax, cmap="Blues")
+        ax.set_title(f"{names[i]}; Accuracy: {models_corrects[i] / total_samples}", fontsize=15)
+        ax.set_xlabel("Predicted", fontsize=15)
+        ax.set_ylabel("True", fontsize=15)
+
+
+
+
+
+
         # ax.set_xticks(range(10))
         # ax.set_yticks(range(10))
-
-
-
-
 
         # if len(models) == 1:
         #     ax = axs
@@ -95,10 +107,6 @@ def compare_models(models=[], names=None, max_samples=10, dataset=None):
         # #     for k in range(10):
         # #         ax.text(j, k, int(confusion_matrices[i][j, k]), ha="center", va="center", color="black")
 
+    # plt.savefig("confusionFFNN.eps", dpi = 600, bbox_inches='tight')
+
     plt.show()
-
-
-
-
-
-
